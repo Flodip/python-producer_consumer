@@ -1,55 +1,49 @@
+# inspired from https://www.bogotobogo.com/python/Multithread/python_multithreading_Synchronization_Producer_Consumer_using_Queue.php
 import threading
 import time
-import logging
 import random
-import Queue
+import queue
 
-logging.basicConfig(level=logging.DEBUG,
-                    format='(%(threadName)-9s) %(message)s',)
+q = queue.Queue()
 
-BUF_SIZE = 10
-q = Queue.Queue(BUF_SIZE)
 
 class ProducerThread(threading.Thread):
-    def __init__(self, group=None, target=None, name=None,
-                 args=(), kwargs=None, verbose=None):
-        super(ProducerThread,self).__init__()
+    def __init__(self, target=None, name=None):
+        super(ProducerThread, self).__init__()
         self.target = target
         self.name = name
 
     def run(self):
         while True:
-            if not q.full():
-                item = random.randint(1,10)
-                q.put(item)
-                logging.debug('Putting ' + str(item)  
-                              + ' : ' + str(q.qsize()) + ' items in queue')
-                time.sleep(random.random())
+            item = random.randint(1, 10)
+            q.put(item)
+            print("+ item " + str(item))
+            time.sleep(2)
         return
+
 
 class ConsumerThread(threading.Thread):
-    def __init__(self, group=None, target=None, name=None,
-                 args=(), kwargs=None, verbose=None):
-        super(ConsumerThread,self).__init__()
+    def __init__(self, target=None, name=None, pool_size=10):
+        super(ConsumerThread, self).__init__()
         self.target = target
         self.name = name
+        self.pool_size = pool_size
         return
 
     def run(self):
         while True:
-            if not q.empty():
-                item = q.get()
-                logging.debug('Getting ' + str(item) 
-                              + ' : ' + str(q.qsize()) + ' items in queue')
-                time.sleep(random.random())
+            time.sleep(3)
+            if not q.qsize() >= self.pool_size:
+                elems = []
+                for i in range(0, self.pool_size):
+                    elems.append(q.get())
+                print("- items " + str(elems))
         return
 
+
 if __name__ == '__main__':
-    
     p = ProducerThread(name='producer')
     c = ConsumerThread(name='consumer')
 
     p.start()
-    time.sleep(2)
     c.start()
-    time.sleep(2)
